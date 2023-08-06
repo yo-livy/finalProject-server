@@ -1,6 +1,8 @@
 import { getUserById, register, login, createTransaction, getTransactionForUser, getTransactionByUserByStock, updateUserCash } from "../models/users.js";
 import bcrypt from 'bcrypt';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
+
 
 export const _register = async (req, res) => {
     const { username, password } = req.body;
@@ -24,7 +26,15 @@ export const _login = async (req, res) => {
         if(row.length === 0) return res.status(400).json({msg:'User not found'});
         const match = await bcrypt.compare(password + "", row[0].password);
         if(!match) return res.status(400).json({msg:'Password is inccorect'});
-        res.status(200).json(row)
+
+        const userPayload = {
+            id: row[0].id,
+            username: row[0].username
+        };
+        
+        const token = jwt.sign(userPayload, process.env.ACCESS_TOKEN_KEY, { expiresIn: '1h' });
+        res.status(200).json({ token, user: userPayload });
+
     } catch (error) {
         console.log(error);
         res.status(404).json({msg: 'Some error occured'});
@@ -53,6 +63,9 @@ export const _getTransactionForUser = async (req, res) => {
 
 export const _portfolio = async (req, res) => {
     const { userid } = req.params;
+    if (!userid) {
+        return res.status(400).json({ msg: 'User ID is missing' });
+    }
     try {
         const user = await getUserById(userid);
         const transactions = await getTransactionForUser(userid);
@@ -86,7 +99,7 @@ export const _portfolio = async (req, res) => {
                     format: 'json',
                 },
                 headers: {
-                    'X-RapidAPI-Key': 'b2ca92159dmshf0da83a18a99e79p1b8e6cjsn4001da243fab',
+                    'X-RapidAPI-Key': process.env.ACCESS_KEY_RAPID,
                     'X-RapidAPI-Host': 'twelve-data1.p.rapidapi.com'
                 }
             };
