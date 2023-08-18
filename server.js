@@ -27,7 +27,6 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
-
 app.listen(process.env.PORT || 3001, () => {
     console.log(`Server listening on ${process.env.PORT || 3001}`);
   });
